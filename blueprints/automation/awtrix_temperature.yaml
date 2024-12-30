@@ -518,11 +518,19 @@ action:
                   {%- endfor %}
                 {%- endmacro %}
 
+                {#- Define a macro to draw out the temperature range#}
+                {%- macro draw_temperature_range(actual_temp, low_temp, high_temp) %}
+                  {%- for x in range(0, 8) %}
+                      {"dp": [31, x, "#D3D3D3"]}
+                  {%- endfor %}
+                {%- endmacro %}
                 {
                   "draw": [
                     {%- if hours_to_show > 0 %}
                     {{draw_forecast_lines((20 - (hours_to_show / 2)) | round(0),hours_to_show,0)}}
                   {%- endif %}
+                    {{draw_temperature_range(5,1,8)}}
+
                   {%- if current_temp != 'unavailable' -%}
                   ,{"dt":[{{text_x}},1,"{{temp_text}}","{{interpolate(color_dict, current_temp | float)}}"]}
                   {%- else -%}
