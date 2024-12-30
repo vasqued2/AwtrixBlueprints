@@ -524,7 +524,7 @@ action:
                   {%- set proportion = (clamped_value - low_temp) / (high_temp - low_temp) %}
                   {%- set target = (proportion * 8) | round(0, 'floor') %}
                   {%- for x in range(0, 8) %}
-                    {%- if x == pixel %}
+                    {%- if x == target %}
                       ,{"dp": [31, {{ x }}, "#FFFFFF"]}
                     {%- else %}
                       ,{"dp": [31, {{ x }}, "#D3D3D3"]}
