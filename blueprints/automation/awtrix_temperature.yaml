@@ -529,6 +529,12 @@ action:
                   {"debug": [{{actual_temp}}, {{low_temp}}, {{high_temp}}]}
                   {%- set proportion = (actual_temp - low_temp) / (high_temp - low_temp) %}
                   {%- set target = (proportion * 8) | round(0, 'floor') %}
+                  {%- if target < 0 %}
+                    {%- set target = 0 %}
+                  {%- endif %}
+                  {%- if target > 7 %}
+                    {%- set target = 7 %}
+                  {%- endif %}
                   {%- for x in range(0, 8) %}
                     {"debug2": [{{target}}, {{x}}]}
                     {%- if x == target %}
