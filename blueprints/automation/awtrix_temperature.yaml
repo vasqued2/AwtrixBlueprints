@@ -29,10 +29,10 @@ blueprint:
           unit_of_measurement: "sec"
       default: 0
 
-    update_frequency:
-      name: Update Frequency
+    trigger_frequency:
+      name: Trigger Frequency
       description: >
-        The frequency (in minutes) that the data will refresh on the Awrix device.
+        The frequency (in minutes) that automation will use to trigger the refresh of information displayed on the Awrix device.
         This uses the [time pattern trigger](https://www.home-assistant.io/docs/automation/trigger/#time-pattern-trigger) format used by Home Assistant triggers.
       default: "/10"
       selector:
@@ -326,7 +326,6 @@ variables:
   current_temp: "{{state_attr(forecast_var,'temperature')}}"
 
   # Forecast hours to show
-  refresh_rate: !input refresh_rate
   hours_to_show: !input hours_to_show
 
   #----------------
@@ -428,7 +427,7 @@ variables:
 
 trigger:
   - platform: time_pattern
-    minutes: !input update_frequency
+    minutes: !input trigger_frequency
   - platform: state
     entity_id: !input forecast_var
     id: Changes
