@@ -431,7 +431,7 @@ variables:
 
 trigger:
   - platform: time_pattern
-    minutes: /2
+    seconds: /5
   - platform: state
     entity_id: !input forecast_var
     id: Changes
