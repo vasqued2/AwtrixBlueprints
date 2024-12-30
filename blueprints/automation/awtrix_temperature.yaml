@@ -29,17 +29,14 @@ blueprint:
           unit_of_measurement: "sec"
       default: 0
 
-    refresh_rate:
-      name: Refresh Rate
+    update_frequency:
+      name: Update Frequency
       description: >
-        The frequency (in minutes) that the data will be refresh on the device
+        The frequency (in minutes) that the data will refresh on the Awrix device.
+        This uses the [time pattern trigger](https://www.home-assistant.io/docs/automation/trigger/#time-pattern-trigger) format used by Home Assistant triggers.
+      default: "/10"
       selector:
-        number:
-          max: 59
-          min: 1
-          unit_of_measurement: "minutes"
-          mode: box
-      default: 10
+        text:
 
     awtrix:
       name: AWTRIX Device
@@ -431,7 +428,7 @@ variables:
 
 trigger:
   - platform: time_pattern
-    minutes: !input refresh_rate
+    minutes: !input update_frequency
   - platform: state
     entity_id: !input forecast_var
     id: Changes
