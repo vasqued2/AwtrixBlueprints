@@ -315,7 +315,6 @@ variables:
   # Temp & Text
   # --------------
   message_duration: !input message_duration_forecast
-  message_duration_riseset: !input message_duration_riseset
   current_temp_var: !input current_temp_var
   temp_digits: !input temp_digits
   temp_suffix: !input temp_suffix
