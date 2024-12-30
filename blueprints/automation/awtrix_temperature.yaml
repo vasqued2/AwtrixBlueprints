@@ -520,8 +520,15 @@ action:
 
                 {#- Define a macro to draw out the temperature range#}
                 {%- macro draw_temperature_range(actual_temp, low_temp, high_temp) %}
+                  {%- set clamped_value = actual_temp if low_temp <= actual_temp <= high_temp else low_temp if actual_temp < low_temp else high_temp %}
+                  {%- set proportion = (clamped_value - low_temp) / (high_temp - low_temp) %}
+                  {%- set target = (proportion * 8) | round(0, 'floor') %}
                   {%- for x in range(0, 8) %}
-                      ,{"dp": [31, {{ x }}, "#D3D3D3"]}
+                    {%- if x == pixel %}
+                      {",dp": [31, {{ x }}, "#FFFFFF"]}
+                    {%- else %}
+                      {",dp": [31, {{ x }}, "#D3D3D3"]}
+                    {%- endif %}
                   {%- endfor %}
                 {%- endmacro %}
                 {
