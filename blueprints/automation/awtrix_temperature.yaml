@@ -531,6 +531,7 @@ action:
                   {%- set proportion = (clamped_value - low_temp) / (high_temp - low_temp) %}
                   {%- set target = (proportion * 8) | round(0, 'floor') %}
                   {%- for x in range(0, 8) %}
+                    {"debug2": [{{target}}, {{x}}]}
                     {%- if x == target %}
                       ,{"dp": [31, {{ x }}, "{{interpolate(color_dict, current_temp | float)}}"]}
                     {%- else %}
