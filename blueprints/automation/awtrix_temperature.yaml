@@ -10,6 +10,37 @@ blueprint:
 
   domain: automation
   input:
+    awtrix_app:
+      name: Awtrix App Name
+      description: >
+        The app name that will be used on the Awtrix device
+      selector:
+        text:
+      default: "jeef_weather"
+
+    message_duration_forecast:
+      name: Display Duration
+      description: >-
+        The number of seconds the `AWTRIX Temperature` app should be displayed.  *If you select `0` it will use the Global App Time*
+      selector:
+        number:
+          min: 0
+          max: 300
+          unit_of_measurement: "sec"
+      default: 0
+
+    refresh_rate:
+      name: Refresh Rate
+      description: >
+        The frequency (in minutes) that the data will be refresh on the device
+      selector:
+        number:
+          max: 59
+          min: 1
+          unit_of_measurement: "minutes"
+          mode: box
+      default: 10
+
     awtrix:
       name: AWTRIX Device
       description: Select the Awtrix device
@@ -21,9 +52,9 @@ blueprint:
           multiple: true
 
     forecast_var:
-      name: Hourly Forecast
+      name: Hourly Forecast Provider
       description: >
-        Select a sensor that provides an Hourly forecast (not a daily one)
+        Select a weather entity that provides an hourly forecast
 
         This has been tested with the following weather service providers:
 
@@ -36,10 +67,22 @@ blueprint:
               - weather
           multiple: false
 
-    hours_to_show:
-      name: Forecast Hours to Show
+    current_temp_var:
+      name: Outdoor Temperature Sensor (Optional)
       description: >
-        The number of hours of forecast to show along the bottom of the display
+        If desired, select an optional sensor to provide the current outdoor temperature you wish to display.  This can be a "Feels Like" value or a personal outdoor thermometer.
+          -  `None` will use the default temperature provided by the weather service provider selected above.
+      selector:
+        entity:
+          domain:
+            - sensor
+          multiple: false
+      default: None
+
+    hours_to_show:
+      name: Hours Displayed
+      description: >
+        The number of hours of temperature forecast displayed along the bottom of the screen
       selector:
         number:
           max: 24
@@ -80,19 +123,7 @@ blueprint:
               value: "F"
             - label: C
               value: "C"
-      default: "°"
-
-    current_temp_var:
-      name: Alternate Outside Temperature Sensor
-      description: >
-        If desired, select an alternate sensor that provides the current outside temperature you wish to display.  This can be a "Feels Like" value or a personal outdoor thermometer.
-          -  `None` will use the default temperature provided by the weather service provider.
-      selector:
-        entity:
-          domain:
-            - sensor
-          multiple: false
-      default: sensor.weatherflow_air_temperature
+      default: "°F"
 
     color_matrix_json:
       name: Color Matrix
@@ -101,13 +132,13 @@ blueprint:
 
         Some possible mappings are:
 
-        #### USA: Farenheit 0-100 (Based on NOAA scale from 0-100)
+        #### USA: Farenheit 0-100
 
 
             {"0": "#FEC4FF","10": "#D977DF","20": "#9545BC","30": "#4B379C","40": "#31B8DB","50": "#31DB8B","60": "#6ED228","70": "#FFFF28","80": "#F87E27","90": "#CF3927","100": "#A12527"}
 
 
-        #### EURO: -12°c to  -38°c based on USA NOAA Colors 
+        #### EURO: -12°c to  -38°c
 
             {"-12": "#D977DF","-6": "#9545BC","-1": "#4B379C","0": "#FEC4FF","4": "#31B8DB","10": "#31DB8B","15": "#6ED228","21": "#FFFF28","27": "#F87E27","32": "#CF3927","38": "#A12527"}
 
@@ -128,17 +159,6 @@ blueprint:
           "90": "#FF4500",
           "100": "#FF0000"
         }
-
-    message_duration_forecast:
-      name: Forecast Duration ⏱️
-      description: >-
-        How long should the forecast message remain on the screen(in seconds).  *If you select `0` it will use the Global App Time*
-      selector:
-        number:
-          min: 0
-          max: 300
-          unit_of_measurement: "sec"
-      default: 0
 
     icon_clear_night:
       name: Icon for clear-night
@@ -213,7 +233,7 @@ blueprint:
       name: Icon for partlycloudy
       description: >
         This is the icon ID which maps to the weather state: `partlycloudy`
-         
+
         ![](https://developer.lametric.com/content/apps/icon_thumbs/2286_icon_thumb.gif?v=1)
 
       selector:
@@ -288,7 +308,7 @@ blueprint:
 mode: restart
 variables:
   device_ids: !input awtrix
-  app_topic: jeef_weather
+  app_topic: !input awtrix_app
   topics: >-
     {%- macro get_device_topic(device_id) %}
     {{ states((device_entities(device_id) | select('search','device_topic') | list)[0]) }}
@@ -309,6 +329,7 @@ variables:
   current_temp: "{{state_attr(forecast_var,'temperature')}}"
 
   # Forecast hours to show
+  refresh_rate: !input refresh_rate
   hours_to_show: !input hours_to_show
 
   #----------------
@@ -410,7 +431,7 @@ variables:
 
 trigger:
   - platform: time_pattern
-    seconds: /5
+    minutes: "/{{refresh_rate}}"
   - platform: state
     entity_id: !input forecast_var
     id: Changes
