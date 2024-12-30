@@ -525,7 +525,7 @@ action:
                   {%- set target = (proportion * 8) | round(0, 'floor') %}
                   {%- for x in range(0, 8) %}
                     {%- if x == target %}
-                      ,{"dp": [31, {{ x }}, "#000000"]}
+                      ,{"dp": [31, {{ x }}, "#FF0000"]}
                     {%- else %}
                       ,{"dp": [31, {{ x }}, "#D3D3D3"]}
                     {%- endif %}
