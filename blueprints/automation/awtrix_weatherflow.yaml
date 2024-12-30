@@ -616,7 +616,12 @@ variables:
   moon_rise: "{{state_attr(moon_times,'moonrise')}}"
   moon_set: "{{state_attr(moon_times,'moonset')}}"
   moon_alt: "{{state_attr(moon_times,'moon_altitude')}}"
-  moon_risen: "{{moon_alt > 0}}"
+  moon_risen: >-
+    {% if moon_alt is number %}
+      {{ moon_alt > 0 }}
+    {% else %}
+      false
+    {% endif %}
   when_show_moon: !input when_show_moon
   show_moon: >-
     {%- if when_show_moon == 'always' %}
@@ -939,7 +944,7 @@ action:
                 {
                   "draw": [
                     {%- if hours_to_show > 0 %}
-                    {{draw_forecast_lines(8,hours_to_show,0)}}
+                    {{draw_forecast_lines((20 - (hours_to_show / 2)) | round(0),hours_to_show,0)}}
                   {%- endif %}
                   {%- if current_temp != 'unavailable' -%}
                   ,{"dt":[{{text_x}},1,"{{temp_text}}","{{interpolate(color_dict, current_temp | float)}}"]}
