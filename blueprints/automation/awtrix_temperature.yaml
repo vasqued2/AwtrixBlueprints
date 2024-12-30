@@ -521,7 +521,7 @@ action:
                 {#- Define a macro to draw out the temperature range#}
                 {%- macro draw_temperature_range(actual_temp, low_temp, high_temp) %}
                   {%- for x in range(0, 8) %}
-                      ,{"dp": [31, x, "#D3D3D3"]}
+                      ,{"dp": [31, {{ x }}, "#D3D3D3"]}
                   {%- endfor %}
                 {%- endmacro %}
                 {
