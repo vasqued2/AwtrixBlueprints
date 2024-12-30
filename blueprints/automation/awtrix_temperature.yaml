@@ -536,9 +536,9 @@ action:
                   {%- endif %}
                   {%- for x in range(0, 8) %}
                     {%- if x == target %}
-                      ,{"dp": [31, {{ x }}, "{{interpolate(color_dict, current_temp | float)}}"]}
+                      ,{"dp": [31, {{ 7 - x }}, "{{interpolate(color_dict, current_temp | float)}}"]}
                     {%- else %}
-                      ,{"dp": [31, {{ x }}, "#D3D3D3"]}
+                      ,{"dp": [31, {{ 7 - x }}, "#D3D3D3"]}
                     {%- endif %}
                   {%- endfor %}
                 {%- endmacro %}
