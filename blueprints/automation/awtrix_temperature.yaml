@@ -546,7 +546,7 @@ action:
                     {%- if hours_to_show > 0 %}
                     {{draw_forecast_lines((20 - (hours_to_show / 2)) | round(0),hours_to_show,0)}}
                   {%- endif %}
-                    {{draw_temperature_range(get_temp(current_temp_var) | int, 1, 100)}}
+                    {{draw_temperature_range(get_temp(current_temp_var) | int, forecast[0]['templow'] | int, forecast[0]['temperature'] | int)}}
                   {%- if current_temp != 'unavailable' -%}
                   ,{"dt":[{{text_x}},1,"{{temp_text}}","{{interpolate(color_dict, current_temp | float)}}"]}
                   {%- else -%}
