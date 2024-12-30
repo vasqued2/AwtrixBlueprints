@@ -440,7 +440,12 @@ action:
     data:
       type: hourly
     response_variable: forecast_response
-
+  - service: weather.get_forecasts
+    target:
+      entity_id: "{{forecast_var}}"
+    data:
+      type: daily
+    response_variable: daily_forecast_response
   - repeat:
       for_each: "{{ topics }}"
       sequence:
@@ -449,6 +454,7 @@ action:
             topic: "{{repeat.item}}"
             payload: >-
               {%- set forecast = forecast_response[forecast_var]['forecast'] -%}
+              {%- set daily_forecast = daily_forecast_response[forecast_var]['forecast'] -%}
               {%- macro interpolate(dictionary, x) -%}
               {%- set sorted_keys = dictionary|dictsort -%}
               {%- set above = sorted_keys|selectattr('0', 'gt', x)|map(attribute='0')|list|first -%}
@@ -546,7 +552,7 @@ action:
                     {%- if hours_to_show > 0 %}
                     {{draw_forecast_lines((20 - (hours_to_show / 2)) | round(0),hours_to_show,0)}}
                   {%- endif %}
-                    {{draw_temperature_range(get_temp(current_temp_var) | int, forecast[0]['templow'] | int, forecast[0]['temperature'] | int)}}
+                    {{draw_temperature_range(get_temp(current_temp_var) | int, daily_forecast[0]['templow'] | int, daily_forecast[0]['temperature'] | int)}}
                   {%- if current_temp != 'unavailable' -%}
                   ,{"dt":[{{text_x}},1,"{{temp_text}}","{{interpolate(color_dict, current_temp | float)}}"]}
                   {%- else -%}
