@@ -528,7 +528,7 @@ action:
                 {%- macro draw_temperature_range(actual_temp, low_temp, high_temp) %}
                   {"debug": [{{actual_temp}}, {{low_temp}}, {{high_temp}}]}
                   {%- set proportion = (actual_temp - low_temp) / (high_temp - low_temp) %}
-                  {%- set target = [(proportion * 8) | round(0, 'floor'), 0] | max %}
+                  {%- set target = [(proportion * 8) | round(0, 'floor') %}
                   {%- for x in range(0, 8) %}
                     {"debug2": [{{target}}, {{x}}]}
                     {%- if x == target %}
