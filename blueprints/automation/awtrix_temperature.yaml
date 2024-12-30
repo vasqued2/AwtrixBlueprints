@@ -431,7 +431,7 @@ variables:
 
 trigger:
   - platform: time_pattern
-    seconds: "{{refresh_rate}}"
+    minutes: !input refresh rate
   - platform: state
     entity_id: !input forecast_var
     id: Changes
