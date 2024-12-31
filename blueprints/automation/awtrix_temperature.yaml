@@ -505,6 +505,24 @@ action:
                 {%- endif -%}
               {%- endmacro -%}
 
+              {#- Define macro to get color -#}
+              {%- macro get_color(dictionary, x) -%}
+                {%- set sorted_keys = dictionary|dictsort -%}
+                {%- set above = sorted_keys|selectattr('0', 'gt', x)|map(attribute='0')|list|first -%}
+                {%- set below = sorted_keys|selectattr('0', 'lt', x)|map(attribute='0')|list|last -%}
+
+                {#- Key matches x exactly -#}
+                {%- if above is defined -%}
+                  {%- set value = dictionary[above] -%}
+                  {{ value }}
+                {%- elif below is defined -%}
+                  {%- set value = dictionary[below] -%}
+                  {{ value }}
+                {%- else -%}
+                  No matching key found.
+                {%- endif -%}
+              {%- endmacro -%}
+
               {#- Define macro to get length of the forecast -#}
               {%- macro str_len(stringo) %}
               {%- if '.' in stringo %}
