@@ -94,7 +94,7 @@ blueprint:
       description: >
         The frequency (in minutes) that automation will use to trigger the refresh of information displayed on the Awrix device.
         This uses the [time pattern trigger](https://www.home-assistant.io/docs/automation/trigger/#time-pattern-trigger) format used by Home Assistant triggers.
-      default: "/10"
+      default: "/2"
       selector:
         text:
 
