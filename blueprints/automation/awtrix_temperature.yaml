@@ -513,10 +513,10 @@ action:
 
                 {#- Key matches x exactly -#}
                 {%- if below is defined -%}
-                  {%- set value = dictionary[above] -%}
+                  {%- set value = dictionary[below] -%}
                   {{ value }}
                 {%- elif above is defined -%}
-                  {%- set value = dictionary[below] -%}
+                  {%- set value = dictionary[above] -%}
                   {{ value }}
                 {%- else -%}
                   No matching key found.
