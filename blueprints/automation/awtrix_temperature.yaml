@@ -1,6 +1,6 @@
 ---
 blueprint:
-  name: AWTRIX Temperature
+  name: AAAWTRIX Temperature
   description: >
     This is a blueprint to display the temperature using the default Meteorologisk institutt (Met.no) weather integration. It may work with other weather integrations.
 
@@ -15,7 +15,7 @@ blueprint:
       description: >
         The devices and sensors required for the blueprint to work.
       input:
-        awtrix:
+        awtrix_device_input:
           name: AWTRIX Device (Required)
           description: Select the Awtrix device
           selector:
@@ -25,10 +25,10 @@ blueprint:
               model: AWTRIX 3
               multiple: true
 
-        forecast_var:
+        hourly_forecast_service_input:
           name: Hourly Forecast Provider (Required)
           description: >
-              Select a weather entity that provides an hourly forecast
+              Select a weather entity that provides hourly forecasts
 
               This has been tested with the following weather service providers:
 
@@ -40,6 +40,23 @@ blueprint:
                 domain:
                 - weather
               multiple: false
+
+        daily_forecast_service_input:
+          name: Daily Forecast Provider (Optional)
+          description: >
+              Select a weather entity that provides daily forecasts
+
+              This has been tested with the following weather service providers:
+
+              - None 
+          
+          selector:
+            entity:
+              filter:
+                domain:
+                - weather
+              multiple: false
+          default: None
 
         current_temp_var:
           name: Outdoor Temperature Sensor (Optional)
@@ -310,7 +327,7 @@ blueprint:
 
 mode: restart
 variables:
-  device_ids: !input awtrix
+  device_ids: !input awtrix_device_input
   app_topic: !input awtrix_app
   topics: >-
     {%- macro get_device_topic(device_id) %}
@@ -327,9 +344,9 @@ variables:
   #---------------------------------
   # Weather Variables
   #---------------------------------
-  forecast_var: !input forecast_var
-  current_condition: "{{states(forecast_var)}}"
-  current_temp: "{{state_attr(forecast_var,'temperature')}}"
+  hourly_forecast_service: !input hourly_forecast_service_input
+  current_condition: "{{states(hourly_forecast_service)}}"
+  current_temp: "{{state_attr(hourly_forecast_service,'temperature')}}"
 
   # Forecast hours to show
   hours_to_show: !input hours_to_show
@@ -435,20 +452,20 @@ trigger:
   - platform: time_pattern
     minutes: !input trigger_frequency
   - platform: state
-    entity_id: !input forecast_var
+    entity_id: !input hourly_forecast_service_input
     id: Changes
     enabled: true
 condition: []
 action:
   - service: weather.get_forecasts
     target:
-      entity_id: "{{forecast_var}}"
+      entity_id: "{{hourly_forecast_service}}"
     data:
       type: hourly
     response_variable: forecast_response
   - service: weather.get_forecasts
     target:
-      entity_id: "{{forecast_var}}"
+      entity_id: "{{hourly_forecast_service}}"
     data:
       type: daily
     response_variable: daily_forecast_response
@@ -459,8 +476,8 @@ action:
           data:
             topic: "{{repeat.item}}"
             payload: >-
-              {%- set forecast = forecast_response[forecast_var]['forecast'] -%}
-              {%- set daily_forecast = daily_forecast_response[forecast_var]['forecast'] -%}
+              {%- set forecast = forecast_response[hourly_forecast_service]['forecast'] -%}
+              {%- set daily_forecast = daily_forecast_response[hourly_forecast_service]['forecast'] -%}
 
               {#- Define macro to interpolate color -#}
               {%- macro interpolate(dictionary, x) -%}
