@@ -512,10 +512,10 @@ action:
                 {%- set below = sorted_keys|selectattr('0', 'lt', x)|map(attribute='0')|list|last -%}
 
                 {#- Key matches x exactly -#}
-                {%- if above is defined -%}
+                {%- if below is defined -%}
                   {%- set value = dictionary[above] -%}
                   {{ value }}
-                {%- elif below is defined -%}
+                {%- elif above is defined -%}
                   {%- set value = dictionary[below] -%}
                   {{ value }}
                 {%- else -%}
