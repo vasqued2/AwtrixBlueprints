@@ -58,7 +58,7 @@ blueprint:
               multiple: false
           default: None
 
-        current_temp_var:
+        current_temp_sensor_input:
           name: Outdoor Temperature Sensor (Optional)
           description: >
             If desired, select an optional sensor to provide the current outdoor temperature you wish to display.  This can be a "Feels Like" value or a personal outdoor thermometer.
@@ -70,7 +70,7 @@ blueprint:
               multiple: false
           default: None
 
-    awtrix_app:
+    awtrix_app_input:
       name: Awtrix App Name
       description: >
         The app name that will be used on the Awtrix device
@@ -78,7 +78,7 @@ blueprint:
         text:
       default: "awtrix_weather"
 
-    message_duration_forecast:
+    display_duration_input:
       name: Display Duration
       description: >-
         The number of seconds the `AWTRIX Temperature` app should be displayed.  *If you select `0` it will use the Global App Time*
@@ -89,7 +89,7 @@ blueprint:
           unit_of_measurement: "sec"
       default: 0
 
-    trigger_frequency:
+    trigger_frequency_input:
       name: Trigger Frequency
       description: >
         The frequency (in minutes) that automation will use to trigger the refresh of information displayed on the Awrix device.
@@ -99,7 +99,7 @@ blueprint:
         text:
 
 
-    hours_to_show:
+    hours_displayed_input:
       name: Hours Displayed
       description: >
         The number of hours of temperature forecast displayed along the bottom of the screen
@@ -111,7 +111,7 @@ blueprint:
           mode: box
       default: 12
 
-    temp_digits:
+    temp_decimals_input:
       name: Temp Digits
       description: >
         By default the temp is rounded to the nearest whole-number. Change this to 1 or 2 in order to see more decimal places.
@@ -124,7 +124,7 @@ blueprint:
           unit_of_measurement: "Decimal places"
       default: 0
 
-    temp_suffix:
+    temp_suffix_input:
       name: Temperature suffix
       description: >-
         The suffix to be displayed after the temperature
@@ -145,7 +145,7 @@ blueprint:
               value: "C"
       default: "°F"
 
-    color_matrix_json:
+    color_matrix_json_input:
       name: Color Matrix
       description: >
         The `Color Matrix` will control color maps to temperature ranges on the display. The format of this map is **JSON** 
@@ -328,7 +328,7 @@ blueprint:
 mode: restart
 variables:
   device_ids: !input awtrix_device_input
-  app_topic: !input awtrix_app
+  app_topic: !input awtrix_app_input
   topics: >-
     {%- macro get_device_topic(device_id) %}
     {{ states((device_entities(device_id) | select('search','device_topic') | list)[0]) }}
@@ -349,15 +349,15 @@ variables:
   current_temp: "{{state_attr(hourly_forecast_service,'temperature')}}"
 
   # Forecast hours to show
-  hours_to_show: !input hours_to_show
+  hours_displayed: !input hours_displayed_input
 
   #----------------
   # Temp & Text
   # --------------
-  message_duration: !input message_duration_forecast
-  current_temp_var: !input current_temp_var
-  temp_digits: !input temp_digits
-  temp_suffix: !input temp_suffix
+  display_duration: !input display_duration_input
+  current_temp_sensor: !input current_temp_sensor_input
+  temp_decimals: !input temp_decimals_input
+  temp_suffix: !input temp_suffix_input
 
   temp_text: >-
     {%- macro round_and_set_temp(temp_var, temp_suffix, digits=0) -%}
@@ -367,7 +367,7 @@ variables:
     {{current_temp ~ temp_suffix}}
     {%- endif -%}
     {%- endmacro -%}
-    {{ round_and_set_temp(current_temp_var, temp_suffix, temp_digits)}}
+    {{ round_and_set_temp(current_temp_sensor, temp_suffix, temp_decimals)}}
 
   text_available_width: 24
 
@@ -415,7 +415,7 @@ variables:
   icon_sunny: !input icon_sunny
   icon_windy: !input icon_windy
   icon_windy_variant: !input icon_windy_variant
-  color_matrix_json: !input color_matrix_json
+  color_matrix_json: !input color_matrix_json_input
   color_dict: >-
     {% set b = color_matrix_json | from_json %}    
     {%- set ns = namespace(tuples=[]) %}
@@ -450,7 +450,7 @@ variables:
 
 trigger:
   - platform: time_pattern
-    minutes: !input trigger_frequency
+    minutes: !input trigger_frequency_input
   - platform: state
     entity_id: !input hourly_forecast_service_input
     id: Changes
@@ -601,10 +601,10 @@ action:
 
                 {
                   "draw": [
-                    {%- if hours_to_show > 0 %}
-                    {{draw_forecast_lines((20 - (hours_to_show / 2)) | round(0),hours_to_show,0)}}
+                    {%- if hours_displayed > 0 %}
+                    {{draw_forecast_lines((20 - (hours_displayed / 2)) | round(0),hours_displayed,0)}}
                   {%- endif %}
-                    {{draw_temperature_range(get_temp(current_temp_var) | int, daily_forecast[0]['templow'] | int, daily_forecast[0]['temperature'] | int)}}
+                    {{draw_temperature_range(get_temp(current_temp_sensor) | int, daily_forecast[0]['templow'] | int, daily_forecast[0]['temperature'] | int)}}
                   {%- if current_temp != 'unavailable' -%}
                   ,{"dt":[{{text_x}},1,"{{temp_text}}","{{get_color(color_dict, current_temp | float)}}"]}
                   {%- else -%}
@@ -612,7 +612,7 @@ action:
                   {%- endif -%}
                   ],
                   "icon": "{{icon}}",
-                  "duration": {{message_duration}},
+                  "duration": {{display_duration}},
                   "pushIcon": 2,
                   "lifetime": 120,
                   "lifetimeMode":1,
