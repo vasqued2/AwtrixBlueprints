@@ -579,7 +579,7 @@ action:
                   {%- endif %}
                     {{draw_temperature_range(get_temp(current_temp_var) | int, daily_forecast[0]['templow'] | int, daily_forecast[0]['temperature'] | int)}}
                   {%- if current_temp != 'unavailable' -%}
-                  ,{"dt":[{{text_x}},1,"{{temp_text}}","{{interpolate(color_dict, current_temp | float)}}"]}
+                  ,{"dt":[{{text_x}},1,"{{temp_text}}","{{get_color(color_dict, current_temp | float)}}"]}
                   {%- else -%}
                   {"dt":"err"}
                   {%- endif -%}
