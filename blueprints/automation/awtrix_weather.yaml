@@ -520,7 +520,13 @@ variables:
 
 
   current_condition_payload: >-
-    {"icon":"{{current_condition_icon}}", "text":"{{current_condition_shortname}}", "color": "{{current_condition_color}}", "duration": "{{display_duration}}"}
+    {
+    "icon":"{{current_condition_icon}}", 
+    "text":"{{current_condition_shortname}}", 
+    "color": "{{current_condition_color}}", 
+    "duration": "{{display_duration}},
+    "overlay": "{{current_condition_overlay}}"
+    "}
 
 
 triggers:
