@@ -180,7 +180,7 @@ blueprint:
           "100": "#FF0000"
         }
 
-    icon_clear_night:
+    icon_clear_night_input:
       name: Icon for clear-night
       description: >
 
@@ -192,7 +192,7 @@ blueprint:
         text:
       default: "w-clear-night"
 
-    icon_cloudy:
+    icon_cloudy_input:
       name: Icon for cloudy
       description: >
         This is the icon ID which maps to the weather state: `cloudy`
@@ -201,7 +201,7 @@ blueprint:
       selector:
         text:
       default: "w-cloudy"
-    icon_exceptional:
+    icon_exceptional_input:
       name: Icon for exceptional
       description: >
         This is the icon ID which maps to the weather state: `exceptional`
@@ -211,7 +211,7 @@ blueprint:
       selector:
         text:
       default: "w-exceptional"
-    icon_fog:
+    icon_fog_input:
       name: Icon for fog
       description: >
         This is the icon ID which maps to the weather state: `fog`
@@ -220,7 +220,7 @@ blueprint:
       selector:
         text:
       default: "w-fog"
-    icon_hail:
+    icon_hail_input:
       name: Icon for hail
       description: >
         This is the icon ID which maps to the weather state: `hail` (IF YOU HAVE A BETTER ONE PLEASE LET ME KNOW)
@@ -230,7 +230,7 @@ blueprint:
       selector:
         text:
       default: "w-hail"
-    icon_lightning:
+    icon_lightning_input:
       name: Icon for lightning
       description: >
         This is the icon ID which maps to the weather state: `lightning`
@@ -240,7 +240,7 @@ blueprint:
       selector:
         text:
       default: "w-lightning"
-    icon_lightning_rainy:
+    icon_lightning_rainy_input:
       name: Icon for lightning-rainy
       description: >
         This is the icon ID which maps to the weather state: `lightning-rainy`
@@ -249,7 +249,7 @@ blueprint:
       selector:
         text:
       default: "w-lightning-rainy"
-    icon_partlycloudy:
+    icon_partlycloudy_input:
       name: Icon for partlycloudy
       description: >
         This is the icon ID which maps to the weather state: `partlycloudy`
@@ -259,7 +259,7 @@ blueprint:
       selector:
         text:
       default: "w-partlycloudy"
-    icon_pouring:
+    icon_pouring_input:
       name: Icon for pouring
       description: >
         This is the default icon which maps to the weather state: `pouring`
@@ -269,7 +269,7 @@ blueprint:
       selector:
         text:
       default: "w-pouring"
-    icon_rainy:
+    icon_rainy_input:
       name: Icon for rainy
       description: >
         This is the default icon which maps to the weather state: `rainy`
@@ -279,7 +279,7 @@ blueprint:
       selector:
         text:
       default: "w-rainy"
-    icon_snowy:
+    icon_snowy_input:
       name: Icon for snowy
       description: >
         This is the icon ID which maps to the weather state: `snowy`
@@ -288,7 +288,7 @@ blueprint:
       selector:
         text:
       default: "w-snowy"
-    icon_snowy_rainy:
+    icon_snowy_rainy_input:
       name: Icon for snowy-rainy
       description: >
         This is the icon ID which maps to the weather state: `snowy-rainy`
@@ -297,7 +297,7 @@ blueprint:
       selector:
         text:
       default: "w-snowy-rainy"
-    icon_sunny:
+    icon_sunny_input:
       name: Icon for sunny
       description: >
         This is the icon ID which maps to the weather state: `sunny`
@@ -306,7 +306,7 @@ blueprint:
       selector:
         text:
       default: "w-sunny"
-    icon_windy:
+    icon_windy_input:
       name: Icon for windy
       description: >
         This is the icon ID which maps to the weather state: `windy`
@@ -315,7 +315,7 @@ blueprint:
       selector:
         text:
       default: "w-windy"
-    icon_windy_variant:
+    icon_windy_variant_input:
       name: Icon for windy-variant
       description: >
         This is the icon ID which maps to the weather state: `windy-variant`
@@ -400,22 +400,22 @@ variables:
   # Icons&Stuff
   # ------------------------------
 
-  icon_clear_night: !input icon_clear_night
-  icon_cloudy: !input icon_cloudy
-  icon_exceptional: !input icon_exceptional
-  icon_fog: !input icon_fog
-  icon_hail: !input icon_hail
-  icon_lightning: !input icon_lightning
-  icon_lightning_rainy: !input icon_lightning_rainy
-  icon_partlycloudy: !input icon_partlycloudy
-  icon_pouring: !input icon_pouring
-  icon_rainy: !input icon_rainy
-  icon_snowy: !input icon_snowy
-  icon_snowy_rainy: !input icon_snowy_rainy
-  icon_sunny: !input icon_sunny
-  icon_windy: !input icon_windy
-  icon_windy_variant: !input icon_windy_variant
-  color_matrix_json: !input color_matrix_json_input
+  icon_clear_night: !input icon_clear_night_input
+  icon_cloudy: !input icon_cloudy_input
+  icon_exceptional: !input icon_exceptional_input
+  icon_fog: !input icon_fog_input
+  icon_hail: !input icon_hail_input
+  icon_lightning: !input icon_lightning_input
+  icon_lightning_rainy: !input icon_lightning_rainy_input
+  icon_partlycloudy: !input icon_partlycloudy_input
+  icon_pouring: !input icon_pouring_input
+  icon_rainy: !input icon_rainy_input
+  icon_snowy: !input icon_snowy_input
+  icon_snowy_rainy: !input icon_snowy_rainy_input
+  icon_sunny: !input icon_sunny_input
+  icon_windy: !input icon_windy_input
+  icon_windy_variant: !input icon_windy_variant_input
+  color_matrix_json: !input color_matrix_json_input_input
   color_dict: >-
     {% set b = color_matrix_json | from_json %}    
     {%- set ns = namespace(tuples=[]) %}
