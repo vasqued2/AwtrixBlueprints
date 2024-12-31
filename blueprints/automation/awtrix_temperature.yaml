@@ -536,9 +536,9 @@ action:
                 {%- macro draw_forecast_lines(x,hours,height) %}
                   {%- for hour in range(hours) %}
                     {%- if height == 0 %}
-                      {"dp": [{{x+hour}},7,"{{interpolate(color_dict, forecast[hour]['temperature']) }}"]}
+                      {"dp": [{{x+hour}},7,"{{get_color(color_dict, forecast[hour]['temperature']) }}"]}
                     {%- else %}
-                      {"dl": [{{x+hour}},7,{{x+hour}},{{7 - height}},"{{interpolate(color_dict, forecast[hour]['temperature']) }}"]}
+                      {"dl": [{{x+hour}},7,{{x+hour}},{{7 - height}},"{{get_color(color_dict, forecast[hour]['temperature']) }}"]}
                     {%- endif %}
                     {%- if hour+1 != hours %},{%endif%}
                   {%- endfor %}
@@ -556,7 +556,7 @@ action:
                   {%- endif %}
                   {%- for x in range(0, 8) %}
                     {%- if x == target %}
-                      ,{"dp": [31, {{ 7 - x }}, "{{interpolate(color_dict, current_temp | float)}}"]}
+                      ,{"dp": [31, {{ 7 - x }}, "{{get_color(color_dict, current_temp | float)}}"]}
                     {%- else %}
                       ,{"dp": [31, {{ 7 - x }}, "#D3D3D3"]}
                     {%- endif %}
