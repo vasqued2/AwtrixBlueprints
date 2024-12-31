@@ -20,9 +20,10 @@ blueprint:
           description: Select the Awtrix device
           selector:
             device:
-              integration: mqtt
-              manufacturer: Blueforcer
-              model: AWTRIX 3
+              filter:
+                integration: mqtt
+                manufacturer: Blueforcer
+                model: AWTRIX 3
               multiple: true
 
         hourly_forecast_service_input:
@@ -64,10 +65,10 @@ blueprint:
             If desired, select an optional sensor to provide the current outdoor temperature you wish to display.  This can be a "Feels Like" value or a personal outdoor thermometer.
               -  `None` will use the default temperature provided by the weather service provider selected above.
           selector:
-            entity:
-              domain:
-                - sensor
-              multiple: false
+              entity:
+                filter:
+                  domain: sensor
+                multiple: false
           default: None
 
     awtrix_app_input:
@@ -482,21 +483,21 @@ variables:
 
   color_dict: >-
     {{ dict({
-      'clear-night': "#001f4d", {#- Dark Blue #}
-      'cloudy': "#a0a0a0", {#- Grey #}
-      'exceptional': "#ff0000", {#- Red #}
-      'fog': "#d3d3d3", {#- Light Grey #}
-      'hail': "#ADD8E6", {#- Light Blue #}
-      'lightning': "#a9a9a9", {#- Dark Grey #}
-      'lightning-rainy': "#0000ff", {#- Blue #}
-      'partlycloudy': "#fdfd96", {#- Light Yellow #}
-      'pouring': "#0000ff", {#- Blue #}
-      'rainy': "#0000ff", {#- Blue #}
-      'snowy': "#ffffff", {#- White #}
-      'snowy-rainy': "#ADD8E6", {#- Light Blue #}
-      'sunny': "#ffff00", {# Yellow #}
-      'windy': "#fdfd96", {#- Light Yellow #}
-      'windy-variant': "#fdfd96"}) {#- Light Yellow #}
+      'clear-night': "001f4d",
+      'cloudy': "a0a0a0",
+      'exceptional': "ff0000",
+      'fog': "d3d3d3",
+      'hail': "ADD8E6",
+      'lightning': "a9a9a9",
+      'lightning-rainy': "0000ff",
+      'partlycloudy': "fdfd96",
+      'pouring': "0000ff",
+      'rainy': "0000ff",
+      'snowy': "ffffff",
+      'snowy-rainy': "ADD8E6",
+      'sunny': "ffff00",
+      'windy': "fdfd96",
+      'windy-variant': "fdfd96"})
     }} 
 
   #--------------
@@ -522,22 +523,22 @@ variables:
     {"icon":"{{current_condition_icon}}", "text":"{{current_condition_shortname}}", "color": "{{current_condition_color}}, "duration": {{display_duration}}}
 
 
-trigger:
-  - platform: time_pattern
+triggers:
+  - trigger: time_pattern
     minutes: !input trigger_frequency_input
-  - platform: state
+  - trigger: state
     entity_id: !input hourly_forecast_service_input
     id: Changes
     enabled: true
-condition: []
-action:
-  - service: weather.get_forecasts
+conditions: []
+actions:
+  - action: weather.get_forecasts
     target:
       entity_id: "{{hourly_forecast_service}}"
     data:
       type: hourly
     response_variable: forecast_response
-  - service: weather.get_forecasts
+  - action: weather.get_forecasts
     target:
       entity_id: "{{hourly_forecast_service}}"
     data:
@@ -546,7 +547,7 @@ action:
   - repeat:
       for_each: "{{ topics }}"
       sequence:
-        - service: mqtt.publish
+        - action: mqtt.publish
           data:
             topic: "{{repeat.item}}"
             payload: >-
@@ -693,10 +694,8 @@ action:
                   "weather": "{{current_condition}}"
                   }
 
-        - service: mqtt.publish
+        - action: mqtt.publish
           data:
-            qos: 0
-            retain: false
             topic: "{{ repeat.item ~ '_weather'}} "
             payload: >
               {{current_condition_payload}}
