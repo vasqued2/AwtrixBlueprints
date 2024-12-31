@@ -16,7 +16,7 @@ blueprint:
         The app name that will be used on the Awtrix device
       selector:
         text:
-      default: "jeef_weather"
+      default: "awtrix_weather"
 
     message_duration_forecast:
       name: Display Duration
