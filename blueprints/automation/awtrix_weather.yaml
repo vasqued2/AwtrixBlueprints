@@ -1,6 +1,6 @@
 ---
 blueprint:
-  name: AAAWTRIX Temperature
+  name: AAAWTRIX Weather
   description: >
     This is a blueprint to display the temperature using the default Meteorologisk institutt (Met.no) weather integration. It may work with other weather integrations.
 
@@ -416,7 +416,7 @@ variables:
   icon_windy: !input icon_windy_input
   icon_windy_variant: !input icon_windy_variant_input
   color_matrix_json: !input color_matrix_json_input
-  color_dict: >-
+  temp_dict: >-
     {% set b = color_matrix_json | from_json %}    
     {%- set ns = namespace(tuples=[]) %}
     {%- for k,v in b | items -%}
@@ -442,11 +442,164 @@ variables:
     'windy': icon_windy, 
     'windy-variant': icon_windy_variant})}}
 
+  color_dict: >-
+    {{ dict({'clear-night': icon_clear_night,
+    'cloudy': icon_cloudy,
+    'exceptional': icon_exceptional,
+    'fog': icon_fog,
+    'hail': icon_hail,
+    'lightning': icon_lightning,
+    'lightning-rainy': icon_lightning_rainy,
+    'partlycloudy': icon_partlycloudy,
+    'pouring': icon_pouring,
+    'rainy': icon_rainy,
+    'snowy': icon_snowy,
+    'snowy-rainy': icon_snowy_rainy,
+    'sunny': icon_sunny,
+    'windy': icon_windy, 
+    'windy-variant': icon_windy_variant})}}
+
   #--------------
   # Weather Icon
   #--------------
   icon: >
     {{ icon_dict[current_condition] }}
+
+
+  # ------------------------------
+  # FORECAST THINGS
+  # ------------------------------
+
+  hourly_forecast_payload: >
+    {%- set hourly_forecast = forecast_response[hourly_forecast_service]['forecast'] -%}
+
+    {#- Define macro to get condition color -#}
+    {%- macro get_condition_color(condition_dictionary, condition) -%}
+      {%- set color = dictionary|dictsort -%}
+                {%- set above = sorted_keys|selectattr('0', 'gt', x)|map(attribute='0')|list|first -%}
+                {%- set below = sorted_keys|selectattr('0', 'le', x)|map(attribute='0')|list|last -%}
+
+                {#- Key matches x exactly -#}
+                {%- if below is defined -%}
+                  {%- set value = dictionary[below] -%}
+                  {{ value }}
+                {%- elif above is defined -%}
+                  {%- set value = dictionary[above] -%}
+                  {{ value }}
+                {%- else -%}
+                  No matching key found.
+                {%- endif -%}
+              {%- endmacro -%}
+
+              {#- Define macro to get length of the forecast -#}
+              {%- macro str_len(stringo) %}
+              {%- if '.' in stringo %}
+              {%- set char_count = (stringo | length) -1 %}{{char_count * 3 + 1 + char_count}}
+              {%- else %}
+              {%- set char_count = (stringo | length) %}{{char_count * 3 + (char_count - 1)}}
+              {%- endif %}
+              {%- endmacro %}
+
+              {#- Define a macro to draw out the forecast lines#}
+                {%- macro draw_forecast_lines(x,hours,height) %}
+                  {%- for hour in range(hours) %}
+                    {%- if height == 0 %}
+                      {"dp": [{{x+hour}},7,"{{get_color(temp_dict, forecast[hour]['temperature']) }}"]}
+                    {%- else %}
+                      {"dl": [{{x+hour}},7,{{x+hour}},{{7 - height}},"{{get_color(temp_dict, forecast[hour]['temperature']) }}"]}
+                    {%- endif %}
+                    {%- if hour+1 != hours %},{%endif%}
+                  {%- endfor %}
+                {%- endmacro %}
+
+                {#- Define a macro to draw out the temperature range#}
+                {%- macro draw_temperature_range(actual_temp, low_temp, high_temp) %}
+                  {%- if high_temp == low_temp %}
+                    {%- set proportion = 4 %}
+                  {%- else %}
+                    {%- set proportion = (actual_temp - low_temp) / (high_temp - low_temp) %}
+                  {%- endif %}
+                  {%- set target = (proportion * 8) | round(0, 'floor') %}
+                  {%- if target < 0 %}
+                    {%- set target = 0 %}
+                  {%- endif %}
+                  {%- if target > 7 %}
+                    {%- set target = 7 %}
+                  {%- endif %}
+                  {%- for x in range(0, 8) %}
+                    {%- if x == target %}
+                      ,{"dp": [31, {{ 7 - x }}, "{{get_color(temp_dict, current_temp | float)}}"]}
+                    {%- else %}
+                      ,{"dp": [31, {{ 7 - x }}, "#D3D3D3"]}
+                    {%- endif %}
+                  {%- endfor %}
+                {%- endmacro %}
+
+                {#- Define a macro get temperature#}
+                {%- macro get_temp(temp_var) -%}
+                  {%- if has_value(temp_var) -%}
+                    {{ states(temp_var) | round(0) }} 
+                  {%- else -%}
+                    {{current_temp}}
+                  {%- endif -%}
+                {%- endmacro -%}
+
+
+  sun_event_minute_threshold: !input sun_event_minute_threshold
+  sun_time_type: !input sun_time_type
+  sun_time_format: !input sun_time_format
+  icon_sunrise: !input icon_sunrise
+  icon_sunset: !input icon_sunset
+  show_sun_rise_set: !input show_sun_rise_set
+
+  sun_next_event: >-
+    {%- set rise = state_attr('sun.sun','next_rising') %}
+    {%- set set = state_attr('sun.sun','next_setting') %}
+    {%- set ts_rise = rise |as_timestamp %}
+    {%- set ts_set = set |as_timestamp %}
+    {{ iif(ts_set < ts_rise,'sunset','sunrise') }}
+
+  sun_min_until_next_event: >-
+    {%- set rise = state_attr('sun.sun','next_rising') %}
+    {%- set set = state_attr('sun.sun','next_setting') %}
+    {%- set ts_rise = rise |as_timestamp %}
+    {%- set ts_set = set |as_timestamp %}
+    {{ iif(sun_next_event == 'sunrise',(ts_rise - utcnow()|as_timestamp) / 60,(ts_set - utcnow()|as_timestamp) / 60) | round(0) }}
+
+  sun_next_str: >-
+    {%- set rise = state_attr('sun.sun','next_rising') %}
+    {%- set set = state_attr('sun.sun','next_setting') %}
+    {%- set ts_rise = rise |as_timestamp %}
+    {%- set ts_set = set |as_timestamp %}
+    {%- if sun_time_type == 'Actual' %}
+      {{ iif(sun_next_event == 'sunrise',(ts_rise | as_datetime | as_local).strftime(sun_time_format),  (ts_set | as_datetime | as_local).strftime(sun_time_format)) }}
+    {%- else %}
+    {#- relative time #}
+      {% set hours = sun_min_until_next_event // 60 %}
+      {% set remaining_minutes = sun_min_until_next_event % 60 %}
+
+      {% if hours == 0 %}
+          {{ remaining_minutes }} min
+      {% else %}
+          [
+            {"t":"{{hours}}", "c":"#ffffff"},
+            {"t":"h", "c":"#9c9d97"},
+            {"t":"{{remaining_minutes}}", "c":"#ffffff"},
+            {"t":"m", "c":"#9c9d97"}
+        ]
+      {% endif %}
+      
+    {%- endif %}
+  sun_event_icon: >-
+    {{ iif(sun_next_event == 'sunrise', icon_sunrise, icon_sunset) }}
+  sun_event_payload: >-
+    {"icon":"{{sun_event_icon}}", "text":"{{sun_next_str}}", "duration": {{message_duration_riseset}}}
+  sun_payload: >-
+    {%- if show_sun_rise_set %}
+    {{ iif(sun_event_minute_threshold >= sun_min_until_next_event, sun_event_payload, "{}") }}
+    {%- else %}
+    {}
+    {%- endif %}
 
 trigger:
   - platform: time_pattern
@@ -559,9 +712,9 @@ action:
                 {%- macro draw_forecast_lines(x,hours,height) %}
                   {%- for hour in range(hours) %}
                     {%- if height == 0 %}
-                      {"dp": [{{x+hour}},7,"{{get_color(color_dict, forecast[hour]['temperature']) }}"]}
+                      {"dp": [{{x+hour}},7,"{{get_color(temp_dict, forecast[hour]['temperature']) }}"]}
                     {%- else %}
-                      {"dl": [{{x+hour}},7,{{x+hour}},{{7 - height}},"{{get_color(color_dict, forecast[hour]['temperature']) }}"]}
+                      {"dl": [{{x+hour}},7,{{x+hour}},{{7 - height}},"{{get_color(temp_dict, forecast[hour]['temperature']) }}"]}
                     {%- endif %}
                     {%- if hour+1 != hours %},{%endif%}
                   {%- endfor %}
@@ -583,7 +736,7 @@ action:
                   {%- endif %}
                   {%- for x in range(0, 8) %}
                     {%- if x == target %}
-                      ,{"dp": [31, {{ 7 - x }}, "{{get_color(color_dict, current_temp | float)}}"]}
+                      ,{"dp": [31, {{ 7 - x }}, "{{get_color(temp_dict, current_temp | float)}}"]}
                     {%- else %}
                       ,{"dp": [31, {{ 7 - x }}, "#D3D3D3"]}
                     {%- endif %}
@@ -606,7 +759,7 @@ action:
                   {%- endif %}
                     {{draw_temperature_range(get_temp(current_temp_sensor) | int, daily_forecast[0]['templow'] | int, daily_forecast[0]['temperature'] | int)}}
                   {%- if current_temp != 'unavailable' -%}
-                  ,{"dt":[{{text_x}},1,"{{temp_text}}","{{get_color(color_dict, current_temp | float)}}"]}
+                  ,{"dt":[{{text_x}},1,"{{temp_text}}","{{get_color(temp_dict, current_temp | float)}}"]}
                   {%- else -%}
                   {"dt":"err"}
                   {%- endif -%}
