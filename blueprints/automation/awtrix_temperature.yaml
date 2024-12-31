@@ -10,6 +10,49 @@ blueprint:
 
   domain: automation
   input:
+    required_sensors:
+      name: Required Devices and Sensors
+      description: >
+        The devices and sensors required for the blueprint to work.
+      input:
+        awtrix:
+          name: AWTRIX Device (Required)
+          description: Select the Awtrix device
+          selector:
+            device:
+              integration: mqtt
+              manufacturer: Blueforcer
+              model: AWTRIX 3
+              multiple: true
+
+        forecast_var:
+          name: Hourly Forecast Provider (Required)
+          description: >
+              Select a weather entity that provides an hourly forecast
+
+              This has been tested with the following weather service providers:
+
+              - HA [Meteorologisk institutt (Met.no)](https://www.home-assistant.io/integrations/met) integration 
+          
+          selector:
+            entity:
+              filter:
+                domain:
+                - weather
+              multiple: false
+
+        current_temp_var:
+          name: Outdoor Temperature Sensor (Optional)
+          description: >
+            If desired, select an optional sensor to provide the current outdoor temperature you wish to display.  This can be a "Feels Like" value or a personal outdoor thermometer.
+              -  `None` will use the default temperature provided by the weather service provider selected above.
+          selector:
+            entity:
+              domain:
+                - sensor
+              multiple: false
+          default: None
+
     awtrix_app:
       name: Awtrix App Name
       description: >
@@ -38,43 +81,6 @@ blueprint:
       selector:
         text:
 
-    awtrix:
-      name: AWTRIX Device
-      description: Select the Awtrix device
-      selector:
-        device:
-          integration: mqtt
-          manufacturer: Blueforcer
-          model: AWTRIX 3
-          multiple: true
-
-    forecast_var:
-      name: Hourly Forecast Provider
-      description: >
-        Select a weather entity that provides an hourly forecast
-
-        This has been tested with the following weather service providers:
-
-          - HA [Meteorologisk institutt (Met.no)](https://www.home-assistant.io/integrations/met) integration 
-          
-      selector:
-        entity:
-          filter:
-            domain:
-              - weather
-          multiple: false
-
-    current_temp_var:
-      name: Outdoor Temperature Sensor (Optional)
-      description: >
-        If desired, select an optional sensor to provide the current outdoor temperature you wish to display.  This can be a "Feels Like" value or a personal outdoor thermometer.
-          -  `None` will use the default temperature provided by the weather service provider selected above.
-      selector:
-        entity:
-          domain:
-            - sensor
-          multiple: false
-      default: None
 
     hours_to_show:
       name: Hours Displayed
