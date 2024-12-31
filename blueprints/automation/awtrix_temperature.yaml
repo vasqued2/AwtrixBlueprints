@@ -455,52 +455,54 @@ action:
             payload: >-
               {%- set forecast = forecast_response[forecast_var]['forecast'] -%}
               {%- set daily_forecast = daily_forecast_response[forecast_var]['forecast'] -%}
+
+              {#- Define macro to interpolate color -#}
               {%- macro interpolate(dictionary, x) -%}
-              {%- set sorted_keys = dictionary|dictsort -%}
-              {%- set above = sorted_keys|selectattr('0', 'gt', x)|map(attribute='0')|list|first -%}
-              {%- set below = sorted_keys|selectattr('0', 'lt', x)|map(attribute='0')|list|last -%}
+                {%- set sorted_keys = dictionary|dictsort -%}
+                {%- set above = sorted_keys|selectattr('0', 'gt', x)|map(attribute='0')|list|first -%}
+                {%- set below = sorted_keys|selectattr('0', 'lt', x)|map(attribute='0')|list|last -%}
 
-              {#- Key matches x exactly -#}
-              {%- if above is defined and dictionary[above] == x -%}
-                {%- set value = dictionary[above] -%}
-                {{ value }}
-              {%- elif below is defined and dictionary[below] == x -%}
-                {%- set value = dictionary[below] -%}
-                {{ value }}
-              {#- Interpolation between two values -#}
-              {%- elif below is defined and above is defined -%}
-                {%- set lower_value = dictionary[below] -%}
-                {%- set upper_value = dictionary[above] -%}
-                {%- set lower_rgb = lower_value[1:] -%}
-                {%- set upper_rgb = upper_value[1:] -%}
+                {#- Key matches x exactly -#}
+                {%- if above is defined and dictionary[above] == x -%}
+                  {%- set value = dictionary[above] -%}
+                  {{ value }}
+                {%- elif below is defined and dictionary[below] == x -%}
+                  {%- set value = dictionary[below] -%}
+                  {{ value }}
+                {#- Interpolation between two values -#}
+                {%- elif below is defined and above is defined -%}
+                  {%- set lower_value = dictionary[below] -%}
+                  {%- set upper_value = dictionary[above] -%}
+                  {%- set lower_rgb = lower_value[1:] -%}
+                  {%- set upper_rgb = upper_value[1:] -%}
 
-                {%- set lower_r = lower_rgb[0:2]|int(base=16) -%}
-                {%- set lower_g = lower_rgb[2:4]|int(base=16) -%}
-                {%- set lower_b = lower_rgb[4:6]|int(base=16) -%}
+                  {%- set lower_r = lower_rgb[0:2]|int(base=16) -%}
+                  {%- set lower_g = lower_rgb[2:4]|int(base=16) -%}
+                  {%- set lower_b = lower_rgb[4:6]|int(base=16) -%}
 
-                {%- set upper_r = upper_rgb[0:2]|int(base=16) -%}
-                {%- set upper_g = upper_rgb[2:4]|int(base=16) -%}
-                {%- set upper_b = upper_rgb[4:6]|int(base=16) -%}
+                  {%- set upper_r = upper_rgb[0:2]|int(base=16) -%}
+                  {%- set upper_g = upper_rgb[2:4]|int(base=16) -%}
+                  {%- set upper_b = upper_rgb[4:6]|int(base=16) -%}
 
-                {%- set interpolation_factor = (x - below) / (above - below) -%}
-                {%- set interpolated_r = ((1 - interpolation_factor) * lower_r + interpolation_factor * upper_r)|int -%}
-                {%- set interpolated_g = ((1 - interpolation_factor) * lower_g + interpolation_factor * upper_g)|int -%}
-                {%- set interpolated_b = ((1 - interpolation_factor) * lower_b + interpolation_factor * upper_b)|int -%}
+                  {%- set interpolation_factor = (x - below) / (above - below) -%}
+                  {%- set interpolated_r = ((1 - interpolation_factor) * lower_r + interpolation_factor * upper_r)|int -%}
+                  {%- set interpolated_g = ((1 - interpolation_factor) * lower_g + interpolation_factor * upper_g)|int -%}
+                  {%- set interpolated_b = ((1 - interpolation_factor) * lower_b + interpolation_factor * upper_b)|int -%}
 
-                {%- set interpolated_hex = '#' ~ '%02X' % interpolated_r ~ '%02X' % interpolated_g ~ '%02X' % interpolated_b -%}
-                {{ interpolated_hex }}
-              {#- Only below key available -#}
-              {%- elif below is defined -%}
-                {%- set value = dictionary[below] -%}
-                {{ value }}
-              {#- Only above key available -#}
-              {%- elif above is defined -%}
-                {%- set value = dictionary[above] -%}
-                {{ value }}
-              {#- No matching keys available -#}
-              {%- else -%}
-                No matching key found.
-              {%- endif -%}
+                  {%- set interpolated_hex = '#' ~ '%02X' % interpolated_r ~ '%02X' % interpolated_g ~ '%02X' % interpolated_b -%}
+                  {{ interpolated_hex }}
+                {#- Only below key available -#}
+                {%- elif below is defined -%}
+                  {%- set value = dictionary[below] -%}
+                  {{ value }}
+                {#- Only above key available -#}
+                {%- elif above is defined -%}
+                  {%- set value = dictionary[above] -%}
+                  {{ value }}
+                {#- No matching keys available -#}
+                {%- else -%}
+                  No matching key found.
+                {%- endif -%}
               {%- endmacro -%}
 
               {#- Define macro to get length of the forecast -#}
