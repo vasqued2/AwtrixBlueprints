@@ -484,11 +484,11 @@ variables:
   color_dict: >-
     {{ dict({
       'clear-night': "#001f4d",
-      'cloudy': "#a0a0a0",
+      'cloudy': "#696969",
       'exceptional': "#ff0000",
       'fog': "#d3d3d3",
       'hail': "#ADD8E6",
-      'lightning': "#a9a9a9",
+      'lightning': "#2F2F2F",
       'lightning-rainy': "#0000ff",
       'partlycloudy': "#fdfd96",
       'pouring': "#0000ff",
@@ -498,6 +498,15 @@ variables:
       'sunny': "#ffff00",
       'windy': "#fdfd96",
       'windy-variant': "#fdfd96"})
+    }} 
+
+  rain_dict: >-
+    {{ dict({
+      '20': "#001f4d",
+      '40': "#0000FF",
+      '60': "#1E90FF",
+      '80': "#3DAEF5",
+      '100': "#FFFFFF"})
     }} 
 
   #--------------
@@ -564,6 +573,33 @@ actions:
   - repeat:
       for_each: "{{ topics }}"
       sequence:
+        - action: mqtt.publish
+          data:
+            topic: "{{ repeat.item ~ '_forecast'}} "
+            payload: >-
+              {%- set hourly_forecast = forecast_response[hourly_forecast_service]['forecast'] -%}
+              {#- Define a macro to draw out the forecast lines#}
+              {%- macro draw_forecast_lines(hours) %}
+                {%- if hours > 12 %}
+                  {%- set hours = 12 %}
+                {%- endif %}
+                {%- for hour in range(hours) %}
+                  {%- set condition = hourly_forecast[hour]['condition'] %}
+                  {%- set color = color_dict[condition] %}
+                  {"dl": [ {{ (hour - 1) * 3 }}, 7, {{ ((hour - 1) * 3) + 1 }}, 7,"{{ color }}" ]}
+                  {%- if hour + 1 != hours %},{% endif %}
+                {%- endfor %}
+              {%- endmacro %}
+              {%- set forecast_line = draw_forecast_lines(hours_displayed) -%}
+              {
+                "icon":"{{current_condition_icon}}", 
+                "text":"{{current_condition_shortname}}", 
+                "color": "{{current_condition_color}}", 
+                "duration": "{{display_duration}}",
+                "draw": [ {{forecast_line}} ],
+                "overlay": "{{current_condition_overlay}}"
+              }
+
         - action: mqtt.publish
           data:
             topic: "{{repeat.item ~ '_temperature'}}"
@@ -648,13 +684,12 @@ actions:
               {%- endmacro %}
 
               {#- Define a macro to draw out the forecast lines#}
-                {%- macro draw_forecast_lines(x,hours,height) %}
+                {%- macro draw_temperature_lines(hours) %}
+                  {%- if hours > 12 %}
+                    {%- set hours = 12 %}
+                  {%- endif %}
                   {%- for hour in range(hours) %}
-                    {%- if height == 0 %}
-                      {"dp": [{{x+hour}},7,"{{get_color(temp_dict, forecast[hour]['temperature']) }}"]}
-                    {%- else %}
-                      {"dl": [{{x+hour}},7,{{x+hour}},{{7 - height}},"{{get_color(temp_dict, forecast[hour]['temperature']) }}"]}
-                    {%- endif %}
+                    {"dl": [ {{ (hour - 1) * 3 }}, 7, {{ ((hour - 1) * 3) + 1 }}, 7, "{{get_color(temp_dict, forecast[hour]['temperature']) }}"]}
                     {%- if hour+1 != hours %},{%endif%}
                   {%- endfor %}
                 {%- endmacro %}
@@ -694,7 +729,7 @@ actions:
                 {
                   "draw": [
                     {%- if hours_displayed > 0 %}
-                    {{draw_forecast_lines((20 - (hours_displayed / 2)) | round(0),hours_displayed,0)}}
+                    {{draw_temperature_lines(hours_displayed)}}
                   {%- endif %}
                   {%- if 'templow' in daily_forecast[0] %}
                     {{draw_temperature_range(get_temp(current_temp_sensor) | int, daily_forecast[0]['templow'] | int, daily_forecast[0]['temperature'] | int)}}
@@ -713,26 +748,3 @@ actions:
                   "weather": "{{current_condition}}"
                   }
 
-        - action: mqtt.publish
-          data:
-            topic: "{{ repeat.item ~ '_forecast'}} "
-            payload: >-
-              {%- set hourly_forecast = forecast_response[hourly_forecast_service]['forecast'] -%}
-              {#- Define a macro to draw out the forecast lines#}
-              {%- macro draw_forecast_lines(x, hours) %}
-                {%- for hour in range(hours | int) %}
-                  {%- set condition = hourly_forecast[hour]['condition'] %}
-                  {%- set color = color_dict[condition] %}
-                  {"dp": [ {{ x + hour }}, 7, "{{ color }}" ]}
-                  {%- if hour + 1 != hours %},{% endif %}
-                {%- endfor %}
-              {%- endmacro %}
-              {%- set forecast_line = draw_forecast_lines((20 - (hours_displayed / 2)) | round(0), hours_displayed | int) -%}
-              {
-                "icon":"{{current_condition_icon}}", 
-                "text":"{{current_condition_shortname}}", 
-                "color": "{{current_condition_color}}", 
-                "duration": "{{display_duration}}",
-                "draw": [ {{forecast_line}} ],
-                "overlay": "{{current_condition_overlay}}"
-              }
