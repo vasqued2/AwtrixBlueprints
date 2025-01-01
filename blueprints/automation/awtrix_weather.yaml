@@ -483,21 +483,21 @@ variables:
 
   color_dict: >-
     {{ dict({
-      'clear-night': "001f4d",
-      'cloudy': "a0a0a0",
-      'exceptional': "ff0000",
-      'fog': "d3d3d3",
-      'hail': "ADD8E6",
-      'lightning': "a9a9a9",
-      'lightning-rainy': "0000ff",
-      'partlycloudy': "fdfd96",
-      'pouring': "0000ff",
-      'rainy': "0000ff",
-      'snowy': "ffffff",
-      'snowy-rainy': "ADD8E6",
-      'sunny': "ffff00",
-      'windy': "fdfd96",
-      'windy-variant': "fdfd96"})
+      'clear-night': "#001f4d",
+      'cloudy': "#a0a0a0",
+      'exceptional': "#ff0000",
+      'fog': "#d3d3d3",
+      'hail': "#ADD8E6",
+      'lightning': "#a9a9a9",
+      'lightning-rainy': "#0000ff",
+      'partlycloudy': "#fdfd96",
+      'pouring': "#0000ff",
+      'rainy': "#0000ff",
+      'snowy': "#ffffff",
+      'snowy-rainy': "#ADD8E6",
+      'sunny': "#ffff00",
+      'windy': "#fdfd96",
+      'windy-variant': "#fdfd96"})
     }} 
 
   #--------------
@@ -515,18 +515,27 @@ variables:
     {{ overlay_dict[current_condition] }}
 
   # ------------------------------
-  # FORECAST THINGS
+  # FORECAST PAYLOAD
   # ------------------------------
+  xforecast_line: >
+    {#- Define a macro to draw out the forecast lines#}
+    {%- macro draw_forecast_lines(x, hours) %}
+      {%- for hour in range(hours | int) %}
+        {"dp": [ {{ x + hour }}, 7, "#FFFFFF"]}
+        {%- if hour + 1 != hours %},{% endif %}
+      {%- endfor %}
+    {%- endmacro %}
+    {{ draw_forecast_lines((20 - (hours_displayed / 2)) | round(0), hours_displayed | int) }}
 
-
-  current_condition_payload: >-
-    {
-    "icon":"{{current_condition_icon}}", 
-    "text":"{{current_condition_shortname}}", 
-    "color": "{{current_condition_color}}", 
-    "duration": "{{display_duration}}",
-    "overlay": "{{current_condition_overlay}}"
-    }
+  xcurrent_condition_payload: >-
+      {
+      "icon":"{{current_condition_icon}}", 
+      "text":"{{current_condition_shortname}}", 
+      "color": "{{current_condition_color}}", 
+      "duration": "{{display_duration}}",
+      "draw": [ {{xforecast_line}} ],
+      "overlay": "{{current_condition_overlay}}"
+      }
 
 
 triggers:
@@ -544,18 +553,20 @@ actions:
     data:
       type: hourly
     response_variable: forecast_response
+
   - action: weather.get_forecasts
     target:
       entity_id: "{{hourly_forecast_service}}"
     data:
-      type: daily
+      type: hourly
     response_variable: daily_forecast_response
+
   - repeat:
       for_each: "{{ topics }}"
       sequence:
         - action: mqtt.publish
           data:
-            topic: "{{repeat.item}}"
+            topic: "{{repeat.item ~ '_temperature'}}"
             payload: >-
               {%- set forecast = forecast_response[hourly_forecast_service]['forecast'] -%}
               {%- set daily_forecast = daily_forecast_response[hourly_forecast_service]['forecast'] -%}
@@ -685,7 +696,9 @@ actions:
                     {%- if hours_displayed > 0 %}
                     {{draw_forecast_lines((20 - (hours_displayed / 2)) | round(0),hours_displayed,0)}}
                   {%- endif %}
+                  {%- if 'templow' in daily_forecast[0] %}
                     {{draw_temperature_range(get_temp(current_temp_sensor) | int, daily_forecast[0]['templow'] | int, daily_forecast[0]['temperature'] | int)}}
+                  {%- endif %}
                   {%- if current_temp != 'unavailable' -%}
                   ,{"dt":[{{text_x}},1,"{{temp_text}}","{{get_color(temp_dict, current_temp | float)}}"]}
                   {%- else -%}
@@ -695,13 +708,31 @@ actions:
                   "icon": "{{icon}}",
                   "duration": {{display_duration}},
                   "pushIcon": 2,
-                  "lifetime": 120,
+                  "lifetime": 3600,
                   "lifetimeMode":1,
                   "weather": "{{current_condition}}"
                   }
 
         - action: mqtt.publish
           data:
-            topic: "{{ repeat.item ~ '_weather'}} "
-            payload: >
-              {{current_condition_payload}}
+            topic: "{{ repeat.item ~ '_forecast'}} "
+            payload: >-
+              {%- set hourly_forecast = forecast_response[hourly_forecast_service]['forecast'] -%}
+              {#- Define a macro to draw out the forecast lines#}
+              {%- macro draw_forecast_lines(x, hours) %}
+                {%- for hour in range(hours | int) %}
+                  {%- set condition = hourly_forecast[hour]['condition'] %}
+                  {%- set color = color_dict[condition] %}
+                  {"dp": [ {{ x + hour }}, 7, "{{ color }}" ]}
+                  {%- if hour + 1 != hours %},{% endif %}
+                {%- endfor %}
+              {%- endmacro %}
+              {%- set forecast_line = draw_forecast_lines((20 - (hours_displayed / 2)) | round(0), hours_displayed | int) -%}
+              {
+                "icon":"{{current_condition_icon}}", 
+                "text":"{{current_condition_shortname}}", 
+                "color": "{{current_condition_color}}", 
+                "duration": "{{display_duration}}",
+                "draw": [ {{forecast_line}} ],
+                "overlay": "{{current_condition_overlay}}"
+              }
