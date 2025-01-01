@@ -740,7 +740,7 @@ actions:
                   {"dt":"err"}
                   {%- endif -%}
                   ],
-                  "icon": "{{icon}}",
+                  "icon": "65144",
                   "duration": {{display_duration}},
                   "pushIcon": 2,
                   "lifetime": 3600,
@@ -788,7 +788,8 @@ actions:
                 {%- set current_rain_color = get_rain_color(rain_dict, current_rain_prob) -%}
                 {%- set forecast_line = draw_rain_lines(hours_displayed) -%}
                 {
-                  "text":"{{current_rain_prob}}% Rain", 
+                  "icon":"65145", 
+                  "text":"{{current_rain_prob}}%", 
                   "color": "{{current_rain_color}}", 
                   "duration": "{{display_duration}}",
                   "draw": [ {{forecast_line}} ]
