@@ -502,11 +502,11 @@ variables:
 
   rain_dict: >-
     {{ dict({
-      '20': "#001f4d",
-      '40': "#0000FF",
-      '60': "#1E90FF",
-      '80': "#3DAEF5",
-      '100': "#FFFFFF"})
+      20: "#FFFFFF",
+      40: "#3DAEF5",
+      60: "#1E90FF",
+      80: "#0000FF",
+      100: "#001f4d"})
     }} 
 
   #--------------
@@ -748,3 +748,51 @@ actions:
                   "weather": "{{current_condition}}"
                   }
 
+        - action: mqtt.publish
+          data:
+            topic: "{{ repeat.item ~ '_rain'}} "
+            payload: >-
+              {%- set hourly_forecast = forecast_response[hourly_forecast_service]['forecast'] -%}
+
+              {#- Define macro to get color -#}
+              {%- macro get_rain_color(dictionary, x) -%}
+                {%- set sorted_keys = dictionary|dictsort -%}
+                {%- set above = sorted_keys|selectattr('0', 'gt', x)|map(attribute='0')|list|first -%}
+                {%- set below = sorted_keys|selectattr('0', 'le', x)|map(attribute='0')|list|last -%}
+                {#- Key matches x exactly -#}
+                {%- if above is defined -%}
+                  {%- set value = dictionary[above] -%}
+                  {{ value }}
+                {%- elif below is defined -%}
+                  {%- set value = dictionary[below] -%}
+                  {{ value }}
+                {%- else -%}
+                  No matching key found.
+                {%- endif -%}
+              {%- endmacro -%}
+
+              {#- Define a macro to draw out the forecast lines#}
+              {%- macro draw_rain_lines(hours) %}
+                {%- if (hours | int) > (12 | int) %}
+                  {%- set hours = 12 %}
+                {%- endif %}
+                {%- for hour in range(hours) %}
+                  {%- set rain_prob = hourly_forecast[hour]['precipitation_probability'] %}
+                  {%- set color = get_rain_color(rain_dict, rain_prob) %}
+                  {"dl": [ {{ (hour) * 3 }}, 7, {{ ((hour) * 3) + 1 }}, 7,"{{ color }}" ]}
+                  {%- if hour + 1 != hours %},{% endif %}
+                {%- endfor %}
+              {%- endmacro %}
+              {%- if 'precipitation_probability' in hourly_forecast[0] %}
+                {%- set current_rain_prob = hourly_forecast[0]['precipitation_probability'] -%}
+                {%- set current_rain_color = get_rain_color(rain_dict, current_rain_prob) -%}
+                {%- set forecast_line = draw_rain_lines(hours_displayed) -%}
+                {
+                  "text":"{{current_rain_prob}}% Rain", 
+                  "color": "{{current_rain_color}}", 
+                  "duration": "{{display_duration}}",
+                  "draw": [ {{forecast_line}} ]
+                }
+              {%- else %}
+                { }
+              {%-endif %}
