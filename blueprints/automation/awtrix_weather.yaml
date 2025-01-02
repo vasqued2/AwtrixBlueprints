@@ -523,30 +523,6 @@ variables:
   current_condition_overlay: >
     {{ overlay_dict[current_condition] }}
 
-  # ------------------------------
-  # FORECAST PAYLOAD
-  # ------------------------------
-  xforecast_line: >
-    {#- Define a macro to draw out the forecast lines#}
-    {%- macro draw_forecast_lines(x, hours) %}
-      {%- for hour in range(hours | int) %}
-        {"dp": [ {{ x + hour }}, 7, "#FFFFFF"]}
-        {%- if hour + 1 != hours %},{% endif %}
-      {%- endfor %}
-    {%- endmacro %}
-    {{ draw_forecast_lines((20 - (hours_displayed / 2)) | round(0), hours_displayed | int) }}
-
-  xcurrent_condition_payload: >-
-      {
-      "icon":"{{current_condition_icon}}", 
-      "text":"{{current_condition_shortname}}", 
-      "color": "{{current_condition_color}}", 
-      "duration": "{{display_duration}}",
-      "draw": [ {{xforecast_line}} ],
-      "overlay": "{{current_condition_overlay}}"
-      }
-
-
 triggers:
   - trigger: time_pattern
     minutes: !input trigger_frequency_input
@@ -607,55 +583,6 @@ actions:
               {%- set forecast = forecast_response[hourly_forecast_service]['forecast'] -%}
               {%- set daily_forecast = daily_forecast_response[hourly_forecast_service]['forecast'] -%}
 
-              {#- Define macro to interpolate color -#}
-              {%- macro interpolate(dictionary, x) -%}
-                {%- set sorted_keys = dictionary|dictsort -%}
-                {%- set above = sorted_keys|selectattr('0', 'gt', x)|map(attribute='0')|list|first -%}
-                {%- set below = sorted_keys|selectattr('0', 'lt', x)|map(attribute='0')|list|last -%}
-
-                {#- Key matches x exactly -#}
-                {%- if above is defined and dictionary[above] == x -%}
-                  {%- set value = dictionary[above] -%}
-                  {{ value }}
-                {%- elif below is defined and dictionary[below] == x -%}
-                  {%- set value = dictionary[below] -%}
-                  {{ value }}
-                {#- Interpolation between two values -#}
-                {%- elif below is defined and above is defined -%}
-                  {%- set lower_value = dictionary[below] -%}
-                  {%- set upper_value = dictionary[above] -%}
-                  {%- set lower_rgb = lower_value[1:] -%}
-                  {%- set upper_rgb = upper_value[1:] -%}
-
-                  {%- set lower_r = lower_rgb[0:2]|int(base=16) -%}
-                  {%- set lower_g = lower_rgb[2:4]|int(base=16) -%}
-                  {%- set lower_b = lower_rgb[4:6]|int(base=16) -%}
-
-                  {%- set upper_r = upper_rgb[0:2]|int(base=16) -%}
-                  {%- set upper_g = upper_rgb[2:4]|int(base=16) -%}
-                  {%- set upper_b = upper_rgb[4:6]|int(base=16) -%}
-
-                  {%- set interpolation_factor = (x - below) / (above - below) -%}
-                  {%- set interpolated_r = ((1 - interpolation_factor) * lower_r + interpolation_factor * upper_r)|int -%}
-                  {%- set interpolated_g = ((1 - interpolation_factor) * lower_g + interpolation_factor * upper_g)|int -%}
-                  {%- set interpolated_b = ((1 - interpolation_factor) * lower_b + interpolation_factor * upper_b)|int -%}
-
-                  {%- set interpolated_hex = '#' ~ '%02X' % interpolated_r ~ '%02X' % interpolated_g ~ '%02X' % interpolated_b -%}
-                  {{ interpolated_hex }}
-                {#- Only below key available -#}
-                {%- elif below is defined -%}
-                  {%- set value = dictionary[below] -%}
-                  {{ value }}
-                {#- Only above key available -#}
-                {%- elif above is defined -%}
-                  {%- set value = dictionary[above] -%}
-                  {{ value }}
-                {#- No matching keys available -#}
-                {%- else -%}
-                  No matching key found.
-                {%- endif -%}
-              {%- endmacro -%}
-
               {#- Define macro to get color -#}
               {%- macro get_color(dictionary, x) -%}
                 {%- set sorted_keys = dictionary|dictsort -%}
@@ -674,15 +601,6 @@ actions:
                 {%- endif -%}
               {%- endmacro -%}
 
-              {#- Define macro to get length of the forecast -#}
-              {%- macro str_len(stringo) %}
-              {%- if '.' in stringo %}
-              {%- set char_count = (stringo | length) -1 %}{{char_count * 3 + 1 + char_count}}
-              {%- else %}
-              {%- set char_count = (stringo | length) %}{{char_count * 3 + (char_count - 1)}}
-              {%- endif %}
-              {%- endmacro %}
-
               {#- Define a macro to draw out the forecast lines#}
                 {%- macro draw_temperature_lines(hours) %}
                   {%- if hours > 12 %}
@@ -694,45 +612,10 @@ actions:
                   {%- endfor %}
                 {%- endmacro %}
 
-                {#- Define a macro to draw out the temperature range#}
-                {%- macro draw_temperature_range(actual_temp, low_temp, high_temp) %}
-                  {%- if high_temp == low_temp %}
-                    {%- set proportion = 4 %}
-                  {%- else %}
-                    {%- set proportion = (actual_temp - low_temp) / (high_temp - low_temp) %}
-                  {%- endif %}
-                  {%- set target = (proportion * 8) | round(0, 'floor') %}
-                  {%- if target < 0 %}
-                    {%- set target = 0 %}
-                  {%- endif %}
-                  {%- if target > 7 %}
-                    {%- set target = 7 %}
-                  {%- endif %}
-                  {%- for x in range(0, 8) %}
-                    {%- if x == target %}
-                      ,{"dp": [31, {{ 7 - x }}, "{{get_color(temp_dict, current_temp | float)}}"]}
-                    {%- else %}
-                      ,{"dp": [31, {{ 7 - x }}, "#D3D3D3"]}
-                    {%- endif %}
-                  {%- endfor %}
-                {%- endmacro %}
-
-                {#- Define a macro get temperature#}
-                {%- macro get_temp(temp_var) -%}
-                  {%- if has_value(temp_var) -%}
-                    {{ states(temp_var) | round(0) }} 
-                  {%- else -%}
-                    {{current_temp}}
-                  {%- endif -%}
-                {%- endmacro -%}
-
                 {
                   "draw": [
                     {%- if hours_displayed > 0 %}
                     {{draw_temperature_lines(hours_displayed)}}
-                  {%- endif %}
-                  {%- if 'templow' in daily_forecast[0] %}
-                    {{draw_temperature_range(get_temp(current_temp_sensor) | int, daily_forecast[0]['templow'] | int, daily_forecast[0]['temperature'] | int)}}
                   {%- endif %}
                   {%- if current_temp != 'unavailable' -%}
                   ,{"dt":[{{text_x}},1,"{{temp_text}}","{{get_color(temp_dict, current_temp | float)}}"]}
