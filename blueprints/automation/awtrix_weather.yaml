@@ -452,7 +452,7 @@ variables:
       'hail': "Hail", 
       'lightning': "Storm", 
       'lightning-rainy': "Storm", 
-      'partlycloudy': "P. Sun", 
+      'partlycloudy': "P Sun", 
       'pouring': "Rain", 
       'rainy': "Rain", 
       'snowy': "Snow", 
