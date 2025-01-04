@@ -1,0 +1,76 @@
+---
+blueprint:
+  name: AAAWTRIX Calendar
+  description: >
+    Monitors the state of a calendar and sets the indicator based on the status of events
+
+  domain: automation
+  input:
+    awtrix_device_input:
+      name: AWTRIX Device
+      description: Select the Awtrix light
+      selector:
+        device:
+          filter:
+            integration: mqtt
+            manufacturer: Blueforcer
+            model: AWTRIX 3
+          multiple: true
+    calendar_input:
+      name: Calendar
+      selector:
+        entity:
+          filter:
+            domain: calendar
+    awtrix_app_input:
+      name: Awtrix App Name
+      description: >
+        The app name that will be used on the Awtrix device
+      selector:
+        text:
+      default: "awtrix_calendar"
+
+mode: queued
+variables:
+  calendar: !input calendar_input
+  cal_state: "{{states(calendar)}}"
+  calendar_event: "{{ state_attr(calendar, 'message') }}"
+
+  device_ids: !input awtrix_device_input
+  app_topic: !input awtrix_app_input
+  topics: >-
+    {%- macro get_device_topic(device_id) %}
+    {{ states((device_entities(device_id) | select('search','device_topic') | list)[0]) }}
+    {%- endmacro %}
+
+    {%- set ns = namespace(devices=[]) %}
+    {%- for device_id in device_ids %}
+      {%- set device=get_device_topic(device_id)|replace(' ','') %}
+      {% set ns.devices = ns.devices + [ device ~ '/custom/' ~ app_topic] %}
+    {%- endfor %}
+    {{ ns.devices | reject('match','unavailable') | list}}
+
+triggers:
+  trigger: state
+  entity_id:
+    - !input calendar_input
+  to: "on"
+
+actions:
+  - repeat:
+      for_each: "{{ topics }}"
+      sequence:
+        - action: mqtt.publish
+          data:
+            qos: 0
+            topic: "{{ repeat.item }}-{{calendar}} "
+            payload: >-
+                {
+                  "icon":"8660", 
+                  "text":"{{calendar_event}}   {{calendar_event}}   {{calendar_event}}", 
+                  "color": "#FF0000",
+                  "lifetime": 120,
+                  "lifetimeMode": 0,
+                  "duration": 20,
+                  "pushIcon": 2
+                }
