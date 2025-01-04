@@ -347,7 +347,7 @@ variables:
   #---------------------------------
   hourly_forecast_service: !input hourly_forecast_service_input
   current_condition: "{{states(hourly_forecast_service)}}"
-  current_temp: "{{state_attr(hourly_forecast_service,'temperature')}}"
+  current_forecast_temp: "{{state_attr(hourly_forecast_service,'temperature')}}"
 
   # Forecast hours to show
   hours_displayed: !input hours_displayed_input
@@ -365,7 +365,7 @@ variables:
     {%- if has_value(temp_var) -%}
       {{ states(temp_var) | round(digits) ~ temp_suffix}} 
     {%- else -%}
-    {{current_temp ~ temp_suffix}}
+    {{current_forecast_temp ~ temp_suffix}}
     {%- endif -%}
     {%- endmacro -%}
     {{ round_and_set_temp(current_temp_sensor, temp_suffix, temp_decimals)}}
@@ -452,7 +452,7 @@ variables:
       'hail': "Hail", 
       'lightning': "Storm", 
       'lightning-rainy': "Storm", 
-      'partlycloudy': "P Cldy", 
+      'partlycloudy': "P. Sun", 
       'pouring': "Rain", 
       'rainy': "Rain", 
       'snowy': "Snow", 
@@ -617,8 +617,8 @@ actions:
                     {%- if hours_displayed > 0 %}
                     {{draw_temperature_lines(hours_displayed)}}
                   {%- endif %}
-                  {%- if current_temp != 'unavailable' -%}
-                  ,{"dt":[{{text_x}},1,"{{temp_text}}","{{get_color(temp_dict, current_temp | float)}}"]}
+                  {%- if current_forecast_temp != 'unavailable' -%}
+                  ,{"dt":[{{text_x}},1,"{{temp_text}}","{{get_color(temp_dict, current_forecast_temp | float)}}"]}
                   {%- else -%}
                   {"dt":"err"}
                   {%- endif -%}
@@ -667,11 +667,16 @@ actions:
                 {%- endfor %}
               {%- endmacro %}
               {%- if 'precipitation_probability' in hourly_forecast[0] %}
+                {%- if current_forecast_temp > 32 %}
+                  {%- set precipitation_icon = "Raindrop" %}
+                {%- else %}
+                  {%- set precipitation_icon = "Snowflake" %}
+                {%- endif %}
                 {%- set current_rain_prob = hourly_forecast[0]['precipitation_probability'] -%}
                 {%- set current_rain_color = get_rain_color(rain_dict, current_rain_prob) -%}
                 {%- set forecast_line = draw_rain_lines(hours_displayed) -%}
                 {
-                  "icon":"65145", 
+                  "icon":"{{precipitation_icon}}", 
                   "text":"{{current_rain_prob}}%", 
                   "color": "{{current_rain_color}}", 
                   "duration": "{{display_duration}}",
