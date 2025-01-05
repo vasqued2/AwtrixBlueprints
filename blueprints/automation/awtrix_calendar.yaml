@@ -29,11 +29,19 @@ blueprint:
       selector:
         text:
       default: "awtrix_calendar"
+    trigger_frequency_input:
+      name: Trigger Frequency
+      description: >
+        The frequency (in minutes) that automation will use to trigger the refresh of information displayed on the Awrix device.
+        This uses the [time pattern trigger](https://www.home-assistant.io/docs/automation/trigger/#time-pattern-trigger) format used by Home Assistant triggers.
+      default: "/30"
+      selector:
+        text:
 
 mode: queued
 variables:
   calendar: !input calendar_input
-  cal_state: "{{states(calendar)}}"
+  calendar_state: "{{states(calendar)}}"
   calendar_event: "{{ state_attr(calendar, 'message') }}"
 
   device_ids: !input awtrix_device_input
@@ -51,11 +59,12 @@ variables:
     {{ ns.devices | reject('match','unavailable') | list}}
 
 triggers:
-  trigger: state
-  entity_id:
-    - !input calendar_input
-  to: "on"
-
+  - trigger: time_pattern
+    minutes: !input trigger_frequency_input
+  - trigger: state
+    entity_id:
+      - !input calendar_input
+    
 actions:
   - repeat:
       for_each: "{{ topics }}"
@@ -65,12 +74,16 @@ actions:
             qos: 0
             topic: "{{ repeat.item }}-{{calendar}} "
             payload: >-
-                {
-                  "icon":"8660", 
-                  "text":"{{calendar_event}}   {{calendar_event}}   {{calendar_event}}", 
-                  "color": "#FF0000",
-                  "lifetime": 120,
-                  "lifetimeMode": 0,
-                  "duration": 20,
-                  "pushIcon": 2
-                }
+                {%- if calendar_state == "on" %}
+                  {
+                    "icon":"8660", 
+                    "text":"{{calendar_event}}   {{calendar_event}}   {{calendar_event}}", 
+                    "rainbow": true,
+                    "lifetime": 3600,
+                    "lifetimeMode": 0,
+                    "duration": 15,
+                    "pushIcon": 2
+                  }
+                {%- else %}
+                  {}
+                {%- endif %}
